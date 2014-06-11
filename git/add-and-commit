@@ -1,0 +1,90 @@
+#!/bin/bash
+
+main() {
+	# get options
+	while getopts m:d: opt; do
+		case "$opt" in
+			m)
+				commitMsg="$OPTARG"
+				;;
+
+			d)
+				commitDirs="$OPTARG"
+				;;
+
+			h)
+				usage
+				;;
+
+			"")
+				usage "Missing arguments";
+				;;
+
+			*)
+				usage "Unrecognied option '$opt'";
+				;;
+		esac
+	done;
+
+	if [[ -z $commitDirs || -z $commitMsg ]]; then
+		usage
+	fi
+
+	gitAdd "$commitDirs"
+	gitCommitAndPush "$commitMsg"
+
+	exit 0
+}
+
+#
+gitAdd() {
+	dirs=$1
+
+	logMsg "Looking for changes in files in: ${dirs}"
+
+	git add $dirs
+
+	newFiles=`git diff --name-only --cached`
+	if [[ -z $newFiles ]]; then
+		logMsg "No changes found."
+		exit 0;
+	fi
+
+	logMsg "Files to be commited:"
+	for file in $newFiles; do
+		logMsg " * $file"
+	done
+}
+
+gitCommitAndPush() {
+	cm=$1
+
+	# commit and push to current branch
+	git commit -m "$cm" -q
+	git push origin HEAD -q
+
+	lastCommit=`git log -n 1 --pretty="%h, %s"`
+	logMsg "Commited and pushed - ${lastCommit}"
+}
+
+usage() {
+	msg=$1
+
+	if [[ $msg ]]; then
+		logMsg $msg
+	fi
+
+	echo "add-and-commit -m 'my commit message' -d ./dist:./CHANGELOG
+
+   -m 'msg'     Commit message
+   -d 'dir'     List of files or folders to add, separated with ':'
+	"
+	exit 1;
+}
+
+logMsg() {
+	msg=$1
+	echo "  ${msg}"
+}
+
+main "$@"
