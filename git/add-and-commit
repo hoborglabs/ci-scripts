@@ -40,7 +40,7 @@ main() {
 gitAdd() {
 	dirs=$1
 
-	logMsg "Looking for changes in files in: ${dirs}"
+	logMsg "Looking for changes in files in: $dirs"
 
 	git add $dirs
 
