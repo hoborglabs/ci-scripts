@@ -1,5 +1,23 @@
 #!/bin/bash
 
+_DIR_="$(dirname "$0")"
+
+. "$_DIR_/../lib/log"
+
+usage() {
+	msg=$1
+	if [[ $msg ]]; then
+		logMsg $msg
+	fi
+
+	echo "add-and-commit -m 'my commit message' -d ./dist:./CHANGELOG
+
+-m 'msg'     Commit message
+-d 'dir'     List of files or folders to add, separated with ':'
+	"
+	exit 1;
+}
+
 main() {
 	# get options
 	while getopts m:d: opt; do
@@ -40,7 +58,7 @@ main() {
 gitAdd() {
 	dirs=$1
 
-	logMsg "Looking for changes in files in: $dirs"
+	logMsg "Looking for changes in: $dirs"
 
 	git add $dirs
 
@@ -65,26 +83,6 @@ gitCommitAndPush() {
 
 	lastCommit=`git log -n 1 --pretty="%h, %s"`
 	logMsg "Commited and pushed - ${lastCommit}"
-}
-
-usage() {
-	msg=$1
-
-	if [[ $msg ]]; then
-		logMsg $msg
-	fi
-
-	echo "add-and-commit -m 'my commit message' -d ./dist:./CHANGELOG
-
-   -m 'msg'     Commit message
-   -d 'dir'     List of files or folders to add, separated with ':'
-	"
-	exit 1;
-}
-
-logMsg() {
-	msg=$1
-	echo "  ${msg}"
 }
 
 main "$@"

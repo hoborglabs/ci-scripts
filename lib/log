@@ -1,0 +1,4 @@
+logMsg() {
+	msg=$1
+	echo "  ${msg}"
+}

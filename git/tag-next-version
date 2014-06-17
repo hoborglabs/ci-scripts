@@ -1,5 +1,9 @@
 #!/bin/bash
 
+_DIR_="$(dirname "$0")"
+
+. "$_DIR_/../lib/log"
+
 usage() {
 	msg=$1
 	if [[ $msg ]]; then
@@ -17,8 +21,6 @@ usage() {
 }
 
 main() {
-	changelogFile=''
-
 	# get options
 	while getopts m:v:c: opt; do
 		case "$opt" in
@@ -49,7 +51,7 @@ main() {
 	done;
 
 	if [[ -z $baseVersion ]]; then
-		usage "You have to specify base version like -v v2.4"
+		usage "You have to specify base version like -v v2.4 to tag v2.4.14"
 	fi
 
 	previousTag='';
@@ -58,12 +60,8 @@ main() {
 	getLatestTag "$baseVersion" previousTag
 	getNextTag "$baseVersion" nextTag
 
-	if [[ -z $commitMsg ]]; then
-		git tag $nextTag
-	else
-		git tag $nextTag -m "$commitMsg"
-	fi
-	echo "Tagged $nextTag"
+	logMsg "Current version: $previousTag"
+	makeTag "$nextTag" "$commitMsg"
 
 	if [[ $changelogFile ]]; then
 		generateChangelog "$previousTag" "$nextTag" "$changelogFile"
@@ -102,6 +100,17 @@ getNextTag() {
 	eval "$2='$base.$bugfix'"
 }
 
+makeTag() {
+	nextTag=$1
+	commitMsg=$2
+	if [[ -z $commitMsg ]]; then
+		git tag $nextTag
+	else
+		git tag $nextTag -m "$commitMsg"
+	fi
+	logMsg "Tagged $nextTag"
+}
+
 generateChangelog() {
 	prevVersion=$1
 	nextVersion=$2
@@ -111,12 +120,7 @@ generateChangelog() {
 	echo "" >> $file
 	git log --no-merges --date=short --pretty='* %cd, %s (%cn, %h)' "$prevVersion".."$nextVersion" >> $file
 
-	echo "Saved changelog to: $file"
-}
-
-logMsg() {
-	msg=$1
-	echo "  $msg"
+	logMsg "Saved changelog to: $file"
 }
 
 main "$@"
