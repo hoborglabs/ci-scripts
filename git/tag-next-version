@@ -3,6 +3,7 @@
 _DIR_="$(dirname "$0")"
 
 . "$_DIR_/../lib/log"
+. "$_DIR_/functions"
 
 usage() {
 	msg=$1
@@ -15,15 +16,22 @@ usage() {
  -v <version> base (major and minor) version number like 2.1
  -m <msg>     Tag message
  -c <file>    Generate changelog and save to given file
+ -p           Push tags
 	"
 
 	exit 1;
 }
 
 main() {
+	pushTags=0
+	branchName='master'
 	# get options
-	while getopts m:v:c: opt; do
+	while getopts b:m::v:c::p opt; do
 		case "$opt" in
+			b)
+				branchName="$OPTARG"
+				;;
+
 			m)
 				commitMsg="$OPTARG"
 				;;
@@ -34,6 +42,10 @@ main() {
 
 			c)
 				changelogFile="${OPTARG:CHANGELOG}"
+				;;
+
+			p)
+				pushTags=1
 				;;
 
 			h)
@@ -57,6 +69,9 @@ main() {
 	previousTag='';
 	nextTag='';
 
+	# if we are in detached state, create local branch
+	ensureOnBranch "$branchName"
+
 	getLatestTag "$baseVersion" previousTag
 	getNextTag "$baseVersion" nextTag
 
@@ -67,9 +82,12 @@ main() {
 		generateChangelog "$previousTag" "$nextTag" "$changelogFile"
 	fi
 
+	if [[ $pushTags ]]; then
+		git push --tags
+	fi
+
 	exit 0
 }
-
 
 getLatestTag() {
 	base=$1

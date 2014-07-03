@@ -1,0 +1,35 @@
+#!/bin/bash
+
+ensureOnBranch() {
+	branch=$1
+
+	currentBranch=`git symbolic-ref -q HEAD | sed 's/.*\/\(.*\)/\1/'`
+
+	if [[ -z $currentBranch ]]; then
+		logMsg "Currently not on any branch"
+
+		remote=`git remote`
+		if [[ -z $remote ]]; then
+			originHEAD=`git log -n1 --pretty=%h $branch`
+		else
+			originHEAD=`git log -n1 --pretty=%h $remote/$branch`
+		fi
+
+		localHEAD=`git log -n1 --pretty=%h`
+
+		if [[ $localHEAD == $originHEAD ]]; then
+			logMsg "local and origin HEADs looks the same ($localHEAD). Switching to branch '$branch'"
+			git checkout $branch -q
+			return 0
+		fi
+
+		logError "local HEAD ($localHEAD) and origin $branch HEAD ($originHEAD) are different." 1
+	fi
+
+	if [[ "$currentBranch" == "$branch" ]]; then
+		return 0;
+	fi
+
+	logError "Branch mismatch. Expecting ${branch} but actually on ${currentBranch}" 1
+
+}
