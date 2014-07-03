@@ -85,7 +85,7 @@ main() {
 	fi
 
 	if [[ $pushTags ]]; then
-		git push --tags
+		git push origin "$nextTag"
 	fi
 
 	exit 0
