@@ -17,6 +17,8 @@ usage() {
  -m <msg>     Tag message
  -c <file>    Generate changelog and save to given file
  -p           Push tags
+ -b 'branch'  Name of branch (defaults to master)
+ -h           Displays this message
 	"
 
 	exit 1;
@@ -26,7 +28,7 @@ main() {
 	pushTags=0
 	branchName='master'
 	# get options
-	while getopts b:m::v:c::p opt; do
+	while getopts b:m::v:c::ph opt; do
 		case "$opt" in
 			b)
 				branchName="$OPTARG"
