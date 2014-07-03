@@ -7,7 +7,7 @@ _DIR_="$(dirname "$0")"
 usage() {
 	msg=$1
 	if [[ $msg ]]; then
-		logMsg $msg
+		logMsg "$msg"
 	fi
 
 	echo "add-and-commit -m 'my commit message' -d ./dist:./CHANGELOG
@@ -20,7 +20,8 @@ usage() {
 
 main() {
 	# get options
-	while getopts m:d: opt; do
+	branchName='master'
+	while getopts m:d:b:h opt; do
 		case "$opt" in
 			m)
 				commitMsg="$OPTARG"
@@ -28,6 +29,10 @@ main() {
 
 			d)
 				commitDirs="$OPTARG"
+				;;
+
+			b)
+				branchName="$OPTARG"
 				;;
 
 			h)
@@ -48,10 +53,43 @@ main() {
 		usage
 	fi
 
+	ensureOnBranch "$branchName"
 	gitAdd "$commitDirs"
 	gitCommitAndPush "$commitMsg"
 
 	exit 0
+}
+
+ensureOnBranch() {
+	branch=$1
+
+	currentBranch=`git symbolic-ref -q HEAD | sed 's/.*\/\(.*\)/\1/'`
+
+	if [[ -z $currentBranch ]]; then
+		logMsg "Currently not on any branch"
+
+		remote=`git remote`
+		if [[ -z $remote ]]; then
+			originHEAD=`git log -n1 --pretty=%h $branch`
+		else
+			originHEAD=`git log -n1 --pretty=%h $remote/$branch`
+		fi
+
+		localHEAD=`git log -n1 --pretty=%h`
+
+		if [[ $localHEAD == $originHEAD ]]; then
+			logMsg "local and origin HEADs looks the same ($localHEAD). Switching to branch '$branch'"
+			git checkout $branch -q
+			return 0
+		fi
+
+		logError "local HEAD ($localHEAD) and origin $branch HEAD ($originHEAD) are different." 1
+	fi
+
+	if [[ "$currentBranch" == "$branch" ]]; then
+		logError "Branch mismatch. Expecting ${branch} but actually on ${currentBranch}" 1
+	fi
+
 }
 
 #
@@ -64,8 +102,7 @@ gitAdd() {
 
 	newFiles=`git diff --name-only --cached`
 	if [[ -z $newFiles ]]; then
-		logMsg "No changes found."
-		exit 0;
+		logError "No changes found." 0
 	fi
 
 	logMsg "Files to be commited:"
@@ -79,7 +116,15 @@ gitCommitAndPush() {
 
 	# commit and push to current branch
 	git commit -m "$cm" -q
-	git push origin HEAD -q
+
+	remote=`git remote`
+	if [[ -z $remote ]]; then
+		logMsg "Nothing to push, there is no remote repository"
+	else
+		git push $remote HEAD -q
+	fi
+
+
 
 	lastCommit=`git log -n 1 --pretty="%h, %s"`
 	logMsg "Commited and pushed - ${lastCommit}"

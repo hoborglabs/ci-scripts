@@ -2,3 +2,11 @@ logMsg() {
 	msg=$1
 	echo "  ${msg}"
 }
+
+logError() {
+	msg=$1
+	exitCode=$2
+
+	echo "  ${msg}"
+	exit $exitCode
+}
