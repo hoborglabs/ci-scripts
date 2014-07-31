@@ -95,8 +95,6 @@ gitCommitAndPush() {
 		git push $remote HEAD -q
 	fi
 
-
-
 	lastCommit=`git log -n 1 --pretty="%h, %s"`
 	logMsg "Commited and pushed - ${lastCommit}"
 }

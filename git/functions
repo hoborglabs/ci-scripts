@@ -20,6 +20,7 @@ ensureOnBranch() {
 		if [[ $localHEAD == $originHEAD ]]; then
 			logMsg "local and origin HEADs looks the same ($localHEAD). Switching to branch '$branch'"
 			git checkout $branch -q
+			git pull -q
 			return 0
 		fi
 
